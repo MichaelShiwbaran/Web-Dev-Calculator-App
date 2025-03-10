@@ -74,6 +74,84 @@
     </div>
 
     <script>
+      class Node {
+        constructor(val = null, left = null, right = null) {
+          this.val = val;
+          this.left = left;
+          this.right = right;
+        }
+      }
+
+      function createTree(expression) {
+        let tokens = expression.match(/\d+|[+\-*/()]/g); // tokenize the mathematical string into numbers, operators, and parentheses
+        let outputQueue = []; //store postfix notation
+        let operatorStack = []; //store parentheses
+        let precedence = { "+": 1, "-": 1, "*": 2, "/": 2 };
+
+        tokens.forEach(token => {
+          if (!isNaN(token)) {
+            outputQueue.push(new Node(token)); // if token is number
+          } else if (token in precedence) { // if token is operator, add using precendence rules
+            while (
+              operatorStack.length &&
+              precedence[operatorStack[operatorStack.length - 1].val] >= precedence[token]
+            ) {
+              outputQueue.push(operatorStack.pop());
+            }
+            operatorStack.push(new Node(token));
+          } else if (token === "(") { // if token is open parentheses push onto stack
+            operatorStack.push(new Node(token));
+          } else if (token === ")") { // if token is closing parentheses pop until correct ) 
+            while (operatorStack.length && operatorStack[operatorStack.length - 1].val !== "(") {
+              outputQueue.push(operatorStack.pop());
+            }
+            operatorStack.pop();
+          }
+        });
+
+        while (operatorStack.length) {
+          outputQueue.push(operatorStack.pop());
+        }
+
+        let stack = [];
+        //process postfix notation for expression tree
+        outputQueue.forEach(node => {
+          if (!isNaN(node.val)) {
+            stack.push(node);
+          } else {
+            let right = stack.pop();
+            let left = stack.pop();
+            node.left = left;
+            node.right = right;
+            stack.push(node);
+          }
+        });
+        
+        return stack.pop();
+      }
+      // recursively evaluate expression tree
+      function solveExpressionTree(node) {
+        if (!node.left && !node.right) { //if node is a leaf, return value as a number
+          return parseFloat(node.val);
+        }
+        let leftValue = solveExpressionTree(node.left);
+        let rightValue = solveExpressionTree(node.right);
+        switch (node.val) {
+          case "+": return leftValue + rightValue;
+          case "-": return leftValue - rightValue;
+          case "*": return leftValue * rightValue;
+          case "/": return leftValue / rightValue;
+        }
+      }
+
+      function calculate() {
+        let expression = data.displayString;
+        let root = createTree(expression);
+        let result = solveExpressionTree(root);
+        data.displayString = result.toString();
+        data.updateDisplay();
+      }
+
       const numbersArr = Array.from(document.getElementsByClassName("number"));
       const operatorsArr = Array.from(document.getElementsByClassName("operator"));
       const parenthesisArr = Array.from(document.getElementsByClassName("parenthesis"));
@@ -83,9 +161,7 @@
         displayString: "0",
         appendStringNum: (newChar) => {
           if (newChar === ".") {
-            //decimal + 0?
           }
-
           if (numberStrs.includes(newChar)) {
             if (data.displayString === "0") {
               data.displayString = "";
@@ -105,11 +181,9 @@
         appendStringParenthesis: (newChar) => {
           if (newChar === ")") {
             if (data.displayString.split("(").length <= data.displayString.split(")").length) {
-              //if there are not enough open parenthesis to add a closing parenthesis terminate early
               return;
             }
             if (operatorsArr.map((operator) => operator.innerText).includes(data.displayString[data.displayString.length - 1])) {
-              //early termination for adding parenthesis after operator
               return;
             }
           }
@@ -118,9 +192,7 @@
             data.displayString += newChar;
             return;
           }
-
           data.displayString += newChar;
-
           data.updateDisplay();
         },
         updateDisplay: () => {
@@ -132,23 +204,19 @@
       const display = document.getElementById("display");
       display.innerText = data.displayString;
 
-      numbersArr.map((elem, i) => {
-        elem.addEventListener("click", (evt) => {
-          data.appendStringNum(elem.innerText);
-        });
+      numbersArr.map((elem) => {
+        elem.addEventListener("click", () => data.appendStringNum(elem.innerText));
       });
 
-      operatorsArr.map((elem, i) => {
-        elem.addEventListener("click", (evt) => {
-          data.appendStringOperator(elem.innerText);
-        });
+      operatorsArr.map((elem) => {
+        elem.addEventListener("click", () => data.appendStringOperator(elem.innerText));
       });
 
-      parenthesisArr.map((elem, i) => {
-        elem.addEventListener("click", (evt) => {
-          data.appendStringParenthesis(elem.innerText);
-        });
+      parenthesisArr.map((elem) => {
+        elem.addEventListener("click", () => data.appendStringParenthesis(elem.innerText));
       });
+
+      document.querySelector(".equals").addEventListener("click", calculate);
     </script>
   </body>
 </html>
