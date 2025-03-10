@@ -83,15 +83,16 @@
       }
 
       function createTree(expression) {
-        let tokens = expression.match(/\d+|[+\-*/()]/g); // tokenize the mathematical string into numbers, operators, and parentheses
+        //tokenize the mathematical string into numbers, operators, and parentheses
+        let tokens = expression.match(/\d+(\.\d+)?|[+\-*/()]/g);
         let outputQueue = []; //store postfix notation
         let operatorStack = []; //store parentheses
         let precedence = { "+": 1, "-": 1, "*": 2, "/": 2 };
 
         tokens.forEach(token => {
           if (!isNaN(token)) {
-            outputQueue.push(new Node(token)); // if token is number
-          } else if (token in precedence) { // if token is operator, add using precendence rules
+            outputQueue.push(new Node(token)); //if token is number
+          } else if (token in precedence) { //if token is operator, add using precendence rules
             while (
               operatorStack.length &&
               precedence[operatorStack[operatorStack.length - 1].val] >= precedence[token]
@@ -99,9 +100,9 @@
               outputQueue.push(operatorStack.pop());
             }
             operatorStack.push(new Node(token));
-          } else if (token === "(") { // if token is open parentheses push onto stack
+          } else if (token === "(") { //if token is open parentheses add to stack
             operatorStack.push(new Node(token));
-          } else if (token === ")") { // if token is closing parentheses pop until correct ) 
+          } else if (token === ")") { //if token is closed parentheses, pop until ) is found
             while (operatorStack.length && operatorStack[operatorStack.length - 1].val !== "(") {
               outputQueue.push(operatorStack.pop());
             }
@@ -129,9 +130,9 @@
         
         return stack.pop();
       }
-      // recursively evaluate expression tree
-      function solveExpressionTree(node) {
-        if (!node.left && !node.right) { //if node is a leaf, return value as a number
+      //recursively evaluate expression tree
+      function solveExpressionTree(node) {// if node is a leaf, return value as a number
+        if (!node.left && !node.right) {
           return parseFloat(node.val);
         }
         let leftValue = solveExpressionTree(node.left);
@@ -155,19 +156,22 @@
       const numbersArr = Array.from(document.getElementsByClassName("number"));
       const operatorsArr = Array.from(document.getElementsByClassName("operator"));
       const parenthesisArr = Array.from(document.getElementsByClassName("parenthesis"));
+      const decimalBtn = document.querySelector(".decimal");
+
       const numberStrs = "0123456789".split("");
 
       const data = {
         displayString: "0",
+
         appendStringNum: (newChar) => {
-          if (newChar === ".") {
+          // Prevent multiple decimals in a single number
+          let lastNum = data.displayString.split(/[\+\-\*\/()]/).pop();
+          if (newChar === "." && lastNum.includes(".")) return;
+
+          if (data.displayString === "0" && newChar !== ".") {
+            data.displayString = "";
           }
-          if (numberStrs.includes(newChar)) {
-            if (data.displayString === "0") {
-              data.displayString = "";
-            }
-            data.displayString += newChar;
-          }
+          data.displayString += newChar;
           data.updateDisplay();
         },
 
@@ -183,38 +187,38 @@
             if (data.displayString.split("(").length <= data.displayString.split(")").length) {
               return;
             }
-            if (operatorsArr.map((operator) => operator.innerText).includes(data.displayString[data.displayString.length - 1])) {
+            if (operatorsArr.map((operator) => operator.innerText).includes(data.displayString.slice(-1))) {
               return;
             }
           }
           if (data.displayString === "0") {
             data.displayString = "";
-            data.displayString += newChar;
-            return;
           }
           data.displayString += newChar;
           data.updateDisplay();
         },
+
         updateDisplay: () => {
           const display = document.getElementById("display");
           display.innerText = data.displayString;
         },
       };
 
-      const display = document.getElementById("display");
-      display.innerText = data.displayString;
+      document.getElementById("display").innerText = data.displayString;
 
-      numbersArr.map((elem) => {
+      numbersArr.forEach(elem => {
         elem.addEventListener("click", () => data.appendStringNum(elem.innerText));
       });
 
-      operatorsArr.map((elem) => {
+      operatorsArr.forEach(elem => {
         elem.addEventListener("click", () => data.appendStringOperator(elem.innerText));
       });
 
-      parenthesisArr.map((elem) => {
+      parenthesisArr.forEach(elem => {
         elem.addEventListener("click", () => data.appendStringParenthesis(elem.innerText));
       });
+
+      decimalBtn.addEventListener("click", () => data.appendStringNum("."));
 
       document.querySelector(".equals").addEventListener("click", calculate);
     </script>
